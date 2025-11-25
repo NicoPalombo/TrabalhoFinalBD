@@ -1,0 +1,162 @@
+---
+title: "Comparação de Formatos de Arquivos em Julia"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    code-copy: true
+    toc: true
+    code-overflow: scroll
+execute:
+  echo: true
+  eval: true
+  cache: false 
+  freeze: false 
+  error: false  
+editor: visual
+---
+## Introdução
+
+-   Objetivo: comparar leitura e performance de arquivos **CSV, TSV, Parquet, JSON e XLSX** utilizando **Julia**, **R** e **Python**.
+
+-   Avaliação:
+
+-   Facilidade de uso
+
+-   Tempo de execução
+    
+
+## Setup
+```{r}
+library(JuliaCall)
+Sys.setenv(JULIA_HOME = "C:/Users/neard/AppData/Local/Programs/Julia-1.12.1/bin")
+julia_setup()
+```
+
+```{julia}
+using CSV, DataFrames, JSON3, Parquet, XLSX, BenchmarkTools, Plots, Dates
+```
+
+## Verificação de Arquivos 
+
+```{julia}
+function analisar_arquivos()
+    arquivos = ["flights-1m.csv", "flights-1m.tsv", "flights-1m.parquet", 
+                "flights-1m.json", "flights-1m.xlsx"]
+    
+    resultados = []
+    
+    for arquivo in arquivos
+        if isfile(arquivo)
+            tamanho_mb = round(filesize(arquivo) / 1024^2, digits=2)
+            push!(resultados, (arquivo, "✅ Disponível", tamanho_mb))
+            println("📊 $arquivo: $tamanho_mb MB")
+        else
+            push!(resultados, (arquivo, "❌ Não encontrado", 0.0))
+            println("❌ $arquivo: Não encontrado")
+        end
+    end
+    
+    return resultados
+end
+
+dados_verificacao = analisar_arquivos()
+```
+
+## Funções de leitura
+
+```{julia} 
+function read_json()
+    dados = [JSON3.read(line) for line in eachline("flights-1m.json")]
+    DataFrame(dados)
+end
+
+function read_xlsx()
+    XLSX.openxlsx("flights-1m.xlsx") do xf
+        sheet = XLSX.sheetnames(xf)[1]
+        DataFrame(XLSX.gettable(xf[sheet]))
+    end
+end
+```
+
+## Leitura CSV 
+
+```{julia}
+inicio = time()
+df_csv = CSV.read("flights-1m.csv", DataFrame)
+tempo_csv = time() - inicio
+println("📊 CSV: $(round(tempo_csv, digits=3))s | Tamanho: $(size(df_csv))")
+```
+
+## Leitura TSV
+
+```{julia}
+inicio = time()
+df_tsv = CSV.read("flights-1m.tsv", DataFrame; delim='\t')
+tempo_tsv = time() - inicio
+println("📊 TSV: $(round(tempo_tsv, digits=3))s | Tamanho: $(size(df_tsv))")
+```
+
+## Leitura Parquet
+
+```{julia}
+inicio = time()
+df_parquet = DataFrame(Parquet.read_parquet("flights-1m.parquet"))
+tempo_parquet = time() - inicio
+println("📊 Parquet: $(round(tempo_parquet, digits=3))s | Tamanho: $(size(df_parquet))")
+```
+
+## Leitura JSON
+
+```{julia}
+inicio = time()
+df_json = read_json()
+tempo_json = time() - inicio
+println("📊 JSON: $(round(tempo_json, digits=3))s | Tamanho: $(size(df_json))")
+```
+
+## Leitura XLSX
+
+```{julia}
+inicio = time()
+df_xlsx = read_xlsx()
+tempo_xlsx = time() - inicio
+println("📊 XLSX: $(round(tempo_xlsx, digits=3))s | Tamanho: $(size(df_xlsx))")
+```
+
+##
+
+```{julia}
+#| echo: false
+#| output: asis
+
+# Função local para evitar problemas de escopo
+function criar_tabela_resultados()
+    resultados = [
+        ("TSV", tempo_tsv, size(df_tsv)),
+        ("CSV", tempo_csv, size(df_csv)), 
+        ("Parquet", tempo_parquet, size(df_parquet)),
+        ("JSON", tempo_json, size(df_json)),
+        ("XLSX", tempo_xlsx, size(df_xlsx))
+    ]
+    
+    sort!(resultados, by = x -> x[2])
+    
+    # Construir a tabela como string
+    tabela = IOBuffer()
+    println(tabela, "## 📊 Resultados Finais da Performance")
+    println(tabela)
+    println(tabela, "| Formato | Tempo (s) | Tamanho |")
+    println(tabela, "|---------|-----------|---------|")
+    
+    for (formato, tempo, tamanho) in resultados
+        println(tabela, "| $formato | $(round(tempo, digits=3)) | $tamanho |")
+    end
+    
+    return String(take!(tabela))
+end
+
+# Executar e mostrar
+println(criar_tabela_resultados())
+```
+
