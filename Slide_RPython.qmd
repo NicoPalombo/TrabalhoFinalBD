@@ -1,0 +1,356 @@
+---
+title: "Comparação de Formatos de Arquivos em Julia, R e Python"
+format:
+  revealjs:
+    theme: night
+    scrollable: false
+    incremental: true
+    slide-number: true
+    code-copy: true
+    toc: true
+execute:
+  echo: true
+  eval: true
+  cache: false 
+  freeze: false 
+  error: false  
+editor: visual
+---
+
+-   Objetivo: comparar leitura e performance de arquivos **CSV, TSV, Parquet, JSON e XLSX** utilizando **R** e **Python**
+
+-   Avaliação:
+
+    -   Facilidade de uso
+
+    -   Tempo de execução
+
+    -   Consumo de memória
+
+# R
+
+## Pacotes
+
+```{r}
+
+library(readr)
+library(readxl)
+library(jsonlite)
+library(arrow)
+
+```
+
+------------------------------------------------------------------------
+
+## Leitura dos Arquivos
+
+**CSV**
+
+```{r}
+# banco csv na base 
+inicio_csv1 <- Sys.time()
+
+csv1_file <- read.csv("flights-1m.csv")
+
+fim_csv1 <- Sys.time()
+tempo_total_csv1 <- fim_csv1 - inicio_csv1
+print(tempo_total_csv1)
+
+
+# banco csv
+inicio_csv2 <- Sys.time()
+
+csv2_file <- read_csv("flights-1m.csv")
+
+fim_csv2 <- Sys.time()
+tempo_total_csv2 <- fim_csv2 - inicio_csv2
+print(tempo_total_csv2)
+```
+
+------------------------------------------------------------------------
+
+**TSV**
+
+```{r}
+inicio_tsv <- Sys.time()
+
+tsv_file <- read_tsv("flights-1m.tsv")
+
+fim_tsv <- Sys.time()
+tempo_total_tsv <- fim_tsv - inicio_tsv
+print(tempo_total_tsv)
+```
+
+------------------------------------------------------------------------
+
+**XLSX**
+
+```{r}
+inicio_xlsx <- Sys.time()
+
+xlsx_file <- read_xlsx("flights-1m.xlsx")
+
+fim_xlsx <- Sys.time()
+tempo_total_xlsx <- fim_xlsx - inicio_xlsx
+print(tempo_total_xlsx)
+```
+
+------------------------------------------------------------------------
+
+**Parquet**
+
+```{r}
+inicio_parquet <- Sys.time()
+
+parquet_file <- read_parquet("flights-1m.parquet")
+
+fim_parquet <- Sys.time()
+tempo_total_parquet <- fim_parquet - inicio_parquet
+print(tempo_total_parquet)
+```
+
+------------------------------------------------------------------------
+
+**JSON**
+
+```{r}
+inicio_json <- Sys.time()
+
+json_file <- stream_in(file("flights-1m.json"))
+
+fim_json <- Sys.time()
+tempo_total_json <- fim_json - inicio_json
+print(tempo_total_json) 
+```
+
+# Python
+
+------------------------------------------------------------------------
+
+## Pacotes
+
+Bibliotecas utilizadas
+
+```{python}
+#Bibliotecas utilizadas
+
+import time
+import pandas as pd
+import polars as pl
+```
+
+------------------------------------------------------------------------
+
+# **1° pacote: Pandas**
+
+---
+
+**CSV**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .txt/.csv
+dados_csv = pd.read_csv('flights-1m.csv')
+
+fim = time.time()
+
+tempo_de_ex_csv = fim - inicio
+print("Tempo csv (pd):",tempo_de_ex_csv)
+```
+
+------------------------------------------------------------------------
+
+**Excel**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .xlsx(Excel)
+dados_excel = pd.read_excel('flights-1m.xlsx')
+
+fim = time.time()
+
+tempo_de_excel = fim - inicio
+print("Tempo xlsx (pd):",tempo_de_excel)
+```
+
+------------------------------------------------------------------------
+
+**JSON**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .json
+dados_json = pd.read_json('flights-1m.json', lines =True)
+
+fim = time.time()
+
+tempo_de_ex_json = fim - inicio
+print("Tempo json (pd):",tempo_de_ex_json)
+```
+
+------------------------------------------------------------------------
+
+**TSV**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .tsv
+dados_tsv = pd.read_csv("flights-1m.tsv", sep='\t')
+
+fim = time.time()
+
+tempo_de_ex_html = fim - inicio
+print("Tempo tsv (pd):",tempo_de_ex_html)
+```
+
+------------------------------------------------------------------------
+
+**Parquet**
+
+```{python}
+
+def medir_leitura_parquet(caminho):
+    inicio_py = time.time()
+    
+    dados_parquet_py = pd.read_parquet(caminho, engine='auto')
+    
+    fim_py = time.time()
+    duracao = fim_py - inicio_py
+    
+    print("Tempo parquet (pd):", duracao)
+    return dados_parquet_py, duracao
+
+# Chamada isolada
+if __name__ == "__main__":
+    dados, tempo = medir_leitura_parquet("flights-1m.parquet")
+```
+
+------------------------------------------------------------------------
+
+# **2° pacote: Polars**
+
+------------------------------------------------------------------------
+
+**CSV**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .txt/.csv
+dados_csv = pl.read_csv('flights-1m.csv')
+
+fim = time.time()
+
+tempo_de_ex = fim - inicio
+print("Tempo csv (pl):",tempo_de_ex)
+```
+
+------------------------------------------------------------------------
+
+**Excel**
+
+```{python}
+inicio = time.time()
+
+#from_pandas(dados_excel)
+#Arquivos .xlsx(Excel)
+
+dados_excel2 = pl.from_pandas(dados_excel)
+
+fim = time.time()
+
+tempo_de_excel = fim - inicio
+print("Tempo xlsx (pl):",tempo_de_excel)
+```
+
+------------------------------------------------------------------------
+
+**JSON**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .json
+dados_json = pl.read_ndjson('flights-1m.json')
+
+fim = time.time()
+
+tempo_de_ex_json = fim - inicio
+print("Tempo json (pl):",tempo_de_ex_json)
+```
+
+------------------------------------------------------------------------
+
+**TSV**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .tsv
+dados_tsv = pl.read_csv("flights-1m.tsv", separator='\t')
+
+fim = time.time()
+
+tempo_de_ex_tsv = fim - inicio
+print("Tempo tsv (pl):",tempo_de_ex_tsv)
+```
+
+------------------------------------------------------------------------
+
+**Parquet**
+
+```{python}
+inicio = time.time()
+
+#Arquivos .parquet
+dados_parquet = pl.read_parquet('flights-1m.parquet')
+
+fim = time.time()
+
+tempo_de_ex_parquet = fim - inicio
+print("Tempo parquet (pl):",tempo_de_ex_parquet)
+```
+
+# Pandas x Polars {.smaller}
+
+| Tipo de Arquivos | Pandas (tempo em segundos) | Polars (tempo em segundos) |
+|------------------|----------------------------|----------------------------|
+| CSV              | 1                          | 0,1\~0,2                   |
+| XLSX             | 105                        | 9                          |
+| TSV              | 1                          | 0,1                        |
+| PARQUET          | 0,3                        | 0,09                       |
+| JSON             | 5                          | 0,3                        |
+
+: Comparação entre Polars e Pandas
+
+------------------------------------------------------------------------
+
+# Conclusões {.smaller}
+
+Tabela comparativa
+
+| Tipo de arquivo | Menor tempo de execução | Linguagem       |
+|-----------------|-------------------------|-----------------|
+| **CSV**         | 1 segundo               | Python (Polars) |
+| **TSV**         | 0,3\~0,5 segundo        | R               |
+| **XLSX**        | 20 segundos             | R               |
+| **PARQUET**     | 0,1\~0,2 segundo        | R               |
+| **JSON**        | 5 segundos              | Python (Pandas) |
+
+------------------------------------------------------------------------
+
+-   Linguagem mais simples: **R**
+
+-   Linguagem mais robusta: **Julia**
+
+-   Linguagem mais divertida: **Julia**
+
+------------------------------------------------------------------------
+
+# Fim
+
+Obrigado pela atenção!
